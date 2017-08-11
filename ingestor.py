@@ -11,11 +11,19 @@ import glob
 import tempfile
 from fuzzywuzzy import process as fuzzymatch
 import shutil
+import csv
 
 # Set up data
 tempdir=""
 df=pd.DataFrame()
 schema=pd.read_csv('schema.csv')
+
+# Helper functions
+def delimiter(filename):
+    f=open(filename)
+    dialect = csv.Sniffer().sniff(f.readline())
+    f.close()
+    return dialect.delimiter
 
 # Set up page
 ## Title
@@ -70,7 +78,8 @@ def download_data():
 
         dfs=[]
         for infile in glob.glob(os.path.join(tempdir,"*")):
-            dfs.append(pd.read_csv(infile, sep='\t'))
+            sep=delimiter(infile)
+            dfs.append(pd.read_csv(infile, sep=sep))
         df=pd.concat(dfs, ignore_index=True)
         columns = [TableColumn(field=i, title=i) for i in df.columns]
         table = DataTable(source=ColumnDataSource(df.head().fillna('.')), columns=columns, width=1200, height=150)
@@ -78,7 +87,7 @@ def download_data():
         progress_bar.text='Preview {}. {} rows, {} columns'.format(filename, df.shape[0], df.shape[1])
 
         widgets.children.append(row(Paragraph(text='''Columns that possibly match
-        the schema are suggested below. Make changes as necessary. Leave the box blank
+        the grand schema are suggested below. Make changes as necessary. Leave the box empty
         if no column in the data file matches that field.''', width=900)))
         cols=[]
         for i in schema.columns:
@@ -97,7 +106,6 @@ def download_data():
 button.on_click(download_data)
 
 # Todo
-# why 20151103 cant be read in correctly
 # Test csv or tsv
 # Ingest
 # Check if precinct is unique across counties
