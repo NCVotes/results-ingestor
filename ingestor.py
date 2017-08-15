@@ -14,9 +14,12 @@ import shutil
 import csv
 
 # Set up data
-tempdir=""
-df=pd.DataFrame()
+database_url='fakebase.tsv'
 schema=pd.read_csv('schema.csv')
+tempdir=""
+
+global df
+cols=[]
 
 # Helper functions
 def delimiter(filename):
@@ -38,14 +41,16 @@ as necessay and click Ingest to finish.''', width=900)
 text_input = TextInput(value="", title="Data file URL:")
 button = Button(label="Fetch", button_type='success',width=150)
 progress_bar=PreText(text="",width=900)
+button_ingest = Button(label="Ingest", button_type='success',width=150)
 
 ## Plot
-
 ## Table
 
 
 # Set up callbacks
 def download_data():
+    global df
+
     if len(widgets.children)>3:
         widgets.children=widgets.children[:3]
     url=text_input.value
@@ -76,6 +81,7 @@ def download_data():
             progress_bar.text='Unzipped {}'.format(filename)
             os.remove(os.path.join(tempdir,filename))
 
+        df=None
         dfs=[]
         for infile in glob.glob(os.path.join(tempdir,"*")):
             sep=delimiter(infile)
@@ -89,7 +95,7 @@ def download_data():
         widgets.children.append(row(Paragraph(text='''Columns that possibly match
         the grand schema are suggested below. Make changes as necessary. Leave the box empty
         if no column in the data file matches that field.''', width=900)))
-        cols=[]
+        del cols[:]
         for i in schema.columns:
             match=fuzzymatch.extractOne(i,df.columns)
             if match[1]>60:
@@ -98,6 +104,9 @@ def download_data():
                 cols.append(widgetbox(Paragraph(text=i+' = '), TextInput(value="", title=""), width=155))
         widgets.children.append(row(*cols))
         shutil.rmtree(tempdir)
+
+        widgets.children.append(row(button_ingest))
+        button_ingest.label="Ingest"
         return 0
 
     progress_bar.text='Failed to download {}'.format(filename)
@@ -105,10 +114,29 @@ def download_data():
 
 button.on_click(download_data)
 
-# Todo
-# Test csv or tsv
-# Ingest
-# Check if precinct is unique across counties
+def ingest_data():
+    global df
+    if df==None:
+        return
+    button_ingest.label="Wait"
+    colnames=[(i.children[1].value, i.children[0].text.replace('=','').strip()) for i in cols if i.children[1].value]
+    colnames=dict(colnames)
+    df=df[colnames.keys()]
+    df.rename(columns=colnames,inplace=True)
+    df2=pd.concat([schema,df], axis=0, ignore_index=True)
+    print(df2.head())
+
+    if os.path.isfile(database_url):
+        with open(database_url,'a') as outfile:
+            df2.to_csv(outfile, sep='\t', header=False, index=False)
+    else:
+        with open(database_url,'w') as outfile:
+            df2.to_csv(outfile, sep='\t', header=True, index=False)
+
+    df=None
+    button_ingest.label="Done"
+
+button_ingest.on_click(ingest_data)
 
 # Set up layouts and add to document
 widgets=layout([[widgetbox(div_title, par_text)],
