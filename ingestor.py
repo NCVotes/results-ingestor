@@ -31,9 +31,9 @@ def delimiter(filename):
 # Set up page
 ## Title
 div_title=Div(text="<h1>NC Contest Data</h1>", width=900)
-par_text=Paragraph(text='''Fill in the url of the file and it will be downloaded
-and unzipped if the filename ends with .zip. The data file will be read (only support
-csv and tsv formats) and displayed below with its first 5 rows for preview. Its columns
+par_text=Paragraph(text='''Fill in the url of a contest result file and it will be downloaded
+and unzipped if the filename ends with .zip. The data file will be read (only
+csv and tsv files supported) and displayed below with its first 5 rows for preview. Its columns
 will be compared to columns in the schema and possible matches are suggested. Make changes
 as necessay and click Ingest to finish.''', width=900)
 
@@ -116,15 +116,20 @@ button.on_click(download_data)
 
 def ingest_data():
     global df
-    if df==None:
+    if df is None:
         return
     button_ingest.label="Wait"
     colnames=[(i.children[1].value, i.children[0].text.replace('=','').strip()) for i in cols if i.children[1].value]
     colnames=dict(colnames)
+    for i in colnames:
+        if i not in df.columns:
+            if colnames[i]=='election_date':
+                df[i]=pd.to_datetime(i)
+            else:
+                df[i]=i
     df=df[colnames.keys()]
     df.rename(columns=colnames,inplace=True)
     df2=pd.concat([schema,df], axis=0, ignore_index=True)
-    print(df2.head())
 
     if os.path.isfile(database_url):
         with open(database_url,'a') as outfile:
