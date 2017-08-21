@@ -12,9 +12,12 @@ import tempfile
 from fuzzywuzzy import process as fuzzymatch
 import shutil
 import csv
+import psycopg2
+from sqlalchemy import create_engine
 
 # Set up data
-database_url='fakebase.tsv'
+# database_url='fakebase.tsv'
+database_url=create_engine('postgresql://ncvoter_prod:mLyEMRkBcgFFjde36v9vT4quZ7smGLTz@34.204.163.12:5432/ncvoter_prod')
 schema=pd.read_csv('schema.csv')
 tempdir=""
 
@@ -136,12 +139,14 @@ def ingest_data():
         df.loc[indx,'district']=dis[1]
     df2=pd.concat([schema,df], axis=0, ignore_index=True)
 
-    if os.path.isfile(database_url):
-        with open(database_url,'a') as outfile:
-            df2.to_csv(outfile, sep='\t', header=False, index=False)
-    else:
-        with open(database_url,'w') as outfile:
-            df2.to_csv(outfile, sep='\t', header=True, index=False)
+    # if os.path.isfile(database_url):
+    #     with open(database_url,'a') as outfile:
+    #         df2.to_csv(outfile, sep='\t', header=False, index=False)
+    # else:
+    #     with open(database_url,'w') as outfile:
+    #         df2.to_csv(outfile, sep='\t', header=True, index=False)
+    df2.to_sql("contest_precinct", database_url, if_exists='append', index=False)
+
 
     df=None
     button_ingest.label="Done"
