@@ -85,7 +85,7 @@ def download_data():
         dfs=[]
         for infile in glob.glob(os.path.join(tempdir,"*")):
             sep=delimiter(infile)
-            dfs.append(pd.read_csv(infile, sep=sep))
+            dfs.append(pd.read_csv(infile, sep=sep, na_values='Not Found'))
         df=pd.concat(dfs, ignore_index=True)
         columns = [TableColumn(field=i, title=i) for i in df.columns]
         table = DataTable(source=ColumnDataSource(df.head().fillna('.')), columns=columns, width=1200, height=150)
@@ -129,6 +129,11 @@ def ingest_data():
                 df[i]=i
     df=df[colnames.keys()]
     df.rename(columns=colnames,inplace=True)
+    if ("district" not in df.columns) or (not df['district'].any()):
+        indx=df['contest_name'].str.contains(r'DISTRICT \d', case=False)
+        dis=df.loc[indx,'contest_name'].str.upper().str.rsplit(r'DISTRICT',n=1,expand=True)
+        df.loc[indx,'contest_name']=dis[0]
+        df.loc[indx,'district']=dis[1]
     df2=pd.concat([schema,df], axis=0, ignore_index=True)
 
     if os.path.isfile(database_url):
