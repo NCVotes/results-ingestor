@@ -133,7 +133,18 @@ def ingest_data():
     df=df[colnames.keys()]
     df.rename(columns=colnames,inplace=True)
     if ("district" not in df.columns) or (not df['district'].any()):
+        # district + number
         indx=df['contest_name'].str.contains(r'DISTRICT \d', case=False)
+        dis=df.loc[indx,'contest_name'].str.upper().str.rsplit(r'DISTRICT',n=1,expand=True)
+        df.loc[indx,'contest_name']=dis[0]
+        df.loc[indx,'district']=dis[1]
+        # district + single letter
+        indx=df['contest_name'].str.contains(r'DISTRICT [a-z]\b', case=False)
+        dis=df.loc[indx,'contest_name'].str.upper().str.rsplit(r'DISTRICT',n=1,expand=True)
+        df.loc[indx,'contest_name']=dis[0]
+        df.loc[indx,'district']=dis[1]
+        # district + roman numeral from 1-9
+        indx=df['contest_name'].str.contains(r'DISTRICT (IX|I?V|V?I{1,3})\b', case=False)
         dis=df.loc[indx,'contest_name'].str.upper().str.rsplit(r'DISTRICT',n=1,expand=True)
         df.loc[indx,'contest_name']=dis[0]
         df.loc[indx,'district']=dis[1]
