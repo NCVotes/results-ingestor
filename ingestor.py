@@ -173,7 +173,7 @@ def ingest_data():
     # else:
     #     with open(database_url,'w') as outfile:
     #         df2.to_csv(outfile, sep='\t', header=True, index=False)
-    #df2.to_sql("contest_precinct", database_url, if_exists='append', index=False)
+    df2.to_sql("contest_precinct", database_url, if_exists='append', index=False)
 
 
     df=None
