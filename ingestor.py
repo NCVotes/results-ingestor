@@ -12,16 +12,14 @@ import tempfile
 from fuzzywuzzy import process as fuzzymatch
 import shutil
 import csv
-import psycopg2
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, exc
 
 # Set up data
-# database_url='fakebase.tsv'
-database_url=create_engine('postgresql://ncvoter_prod:mLyEMRkBcgFFjde36v9vT4quZ7smGLTz@34.204.163.12:5432/ncvoter_prod')
+database_url='34.204.163.12:5432'
 schema=pd.read_csv('schema.csv')
 tempdir=""
 
-global df
+global df, database
 cols=[]
 
 # Helper functions
@@ -34,29 +32,46 @@ def delimiter(filename):
 # Set up page
 ## Title
 div_title=Div(text="<h1>NC Contest Data</h1>", width=900)
-par_text=Paragraph(text='''Fill in the url of a contest result file and it will be downloaded
-and unzipped if the filename ends with .zip. The data file will be read (only
-csv and tsv files supported) and displayed below with its first 5 rows for preview. Its columns
-will be compared to columns in the schema and possible matches are suggested. Make changes
-as necessay and click Ingest to finish.''', width=900)
+par_text=Paragraph(text="", width=900)
 
 ## Widgets
-text_input = TextInput(value="", title="Data file URL:")
-button = Button(label="Fetch", button_type='success',width=150)
+username_input=TextInput(value="Username", title="")
+password_input=TextInput(value="Password", title="")
+login_button=Button(label="Login", button_type='success',width=150)
+url_input = TextInput(value="", title="Data file URL:")
+fetch_button = Button(label="Fetch", button_type='success',width=150)
 progress_bar=PreText(text="",width=900)
-button_ingest = Button(label="Ingest", button_type='success',width=150)
+ingest_button = Button(label="Ingest", button_type='success',width=150)
 
 ## Plot
 ## Table
 
 
 # Set up callbacks
+def login():
+    global database
+    database=create_engine('postgresql://{}:{}@{}/ncvoter_prod'.format(username_input.value,password_input.value,database_url))
+    try:
+        database.connect()
+        par_text.text='''Fill in the url of a contest result file and it will be downloaded
+        and unzipped if the filename ends with .zip. The data file will be read (only
+        csv and tsv files supported) and displayed below with its first 5 rows for preview. Its columns
+        will be compared to columns in the schema and possible matches are suggested. Make changes
+        as necessay and click Ingest to finish.'''
+        widgets.children=widgets.children[:1]
+        widgets.children.append(row(widgetbox(url_input,fetch_button)))
+        widgets.children.append(row(progress_bar))
+    except exc.SQLAlchemyError as err:
+        par_text.text=str(err)
+
+login_button.on_click(login)
+
 def download_data():
     global df
 
     if len(widgets.children)>3:
         widgets.children=widgets.children[:3]
-    url=text_input.value
+    url=url_input.value
     filename=url.split('/')[-1]
     progress_bar.text='Downloading {}: 0%'.format(filename)
     resp = requests.get(url, stream=True)
@@ -101,6 +116,8 @@ def download_data():
         del cols[:]
         for i in schema.columns:
             match=fuzzymatch.extractOne(i,df.columns)
+            if i == 'candidate' and match[1]<60:
+                match=fuzzymatch.extractOne('choice',df.columns)
             if match[1]>60:
                 cols.append(widgetbox(Paragraph(text=i+' = '), TextInput(value=match[0], title=""), width=155))
             else:
@@ -108,20 +125,20 @@ def download_data():
         widgets.children.append(row(*cols))
         shutil.rmtree(tempdir)
 
-        widgets.children.append(row(button_ingest))
-        button_ingest.label="Ingest"
+        widgets.children.append(row(ingest_button))
+        ingest_button.label="Ingest"
         return 0
 
     progress_bar.text='Failed to download {}'.format(filename)
     return 1
 
-button.on_click(download_data)
+fetch_button.on_click(download_data)
 
 def ingest_data():
     global df
     if df is None:
         return
-    button_ingest.label="Wait"
+    ingest_button.label="Wait"
     colnames=[(i.children[1].value, i.children[0].text.replace('=','').strip()) for i in cols if i.children[1].value]
     colnames=dict(colnames)
     for i in colnames:
@@ -156,18 +173,17 @@ def ingest_data():
     # else:
     #     with open(database_url,'w') as outfile:
     #         df2.to_csv(outfile, sep='\t', header=True, index=False)
-    df2.to_sql("contest_precinct", database_url, if_exists='append', index=False)
+    #df2.to_sql("contest_precinct", database_url, if_exists='append', index=False)
 
 
     df=None
-    button_ingest.label="Done"
+    ingest_button.label="Done"
 
-button_ingest.on_click(ingest_data)
+ingest_button.on_click(ingest_data)
 
 # Set up layouts and add to document
 widgets=layout([[widgetbox(div_title, par_text)],
-                [widgetbox(text_input,button)],
-                [progress_bar]])
+                [widgetbox(username_input,password_input,login_button)]])
 
 curdoc().add_root(widgets)
 curdoc().title = "NC Contest"
