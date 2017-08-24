@@ -68,7 +68,8 @@ login_button.on_click(login)
 
 def download_data():
     global df
-
+    df=None
+    fetch_button.disabled=True
     if len(widgets.children)>3:
         widgets.children=widgets.children[:3]
     url=url_input.value
@@ -99,7 +100,6 @@ def download_data():
             progress_bar.text='Unzipped {}'.format(filename)
             os.remove(os.path.join(tempdir,filename))
 
-        df=None
         dfs=[]
         for infile in glob.glob(os.path.join(tempdir,"*")):
             sep=delimiter(infile)
@@ -127,6 +127,8 @@ def download_data():
 
         widgets.children.append(row(ingest_button))
         ingest_button.label="Ingest"
+        ingest_button.disabled=False
+        fetch_button.disabled=False
         return 0
 
     progress_bar.text='Failed to download {}'.format(filename)
@@ -138,6 +140,8 @@ def ingest_data():
     global df
     if df is None:
         return
+    fetch_button.disabled=True
+    ingest_button.disabled=True
     ingest_button.label="Wait"
     colnames=[(i.children[1].value, i.children[0].text.replace('=','').strip()) for i in cols if i.children[1].value]
     colnames=dict(colnames)
@@ -152,19 +156,22 @@ def ingest_data():
     if ("district" not in df.columns) or (not df['district'].any()):
         # district + number
         indx=df['contest_name'].str.contains(r'DISTRICT \d', case=False)
-        dis=df.loc[indx,'contest_name'].str.upper().str.rsplit(r'DISTRICT',n=1,expand=True)
-        df.loc[indx,'contest_name']=dis[0]
-        df.loc[indx,'district']=dis[1]
+        if indx.any():
+            dis=df.loc[indx,'contest_name'].str.upper().str.rsplit(r'DISTRICT',n=1,expand=True)
+            df.loc[indx,'contest_name']=dis[0]
+            df.loc[indx,'district']=dis[1]
         # district + single letter
         indx=df['contest_name'].str.contains(r'DISTRICT [a-z]\b', case=False)
-        dis=df.loc[indx,'contest_name'].str.upper().str.rsplit(r'DISTRICT',n=1,expand=True)
-        df.loc[indx,'contest_name']=dis[0]
-        df.loc[indx,'district']=dis[1]
+        if indx.any():
+            dis=df.loc[indx,'contest_name'].str.upper().str.rsplit(r'DISTRICT',n=1,expand=True)
+            df.loc[indx,'contest_name']=dis[0]
+            df.loc[indx,'district']=dis[1]
         # district + roman numeral from 1-9
         indx=df['contest_name'].str.contains(r'DISTRICT (IX|I?V|V?I{1,3})\b', case=False)
-        dis=df.loc[indx,'contest_name'].str.upper().str.rsplit(r'DISTRICT',n=1,expand=True)
-        df.loc[indx,'contest_name']=dis[0]
-        df.loc[indx,'district']=dis[1]
+        if indx.any():
+            dis=df.loc[indx,'contest_name'].str.upper().str.rsplit(r'DISTRICT',n=1,expand=True)
+            df.loc[indx,'contest_name']=dis[0]
+            df.loc[indx,'district']=dis[1]
     df2=pd.concat([schema,df], axis=0, ignore_index=True)
 
     # if os.path.isfile(database_url):
@@ -173,11 +180,12 @@ def ingest_data():
     # else:
     #     with open(database_url,'w') as outfile:
     #         df2.to_csv(outfile, sep='\t', header=True, index=False)
-    df2.to_sql("contest_precinct", database_url, if_exists='append', index=False)
-
+    df2.to_sql("contest_precinct", database, if_exists='append', index=False)
 
     df=None
     ingest_button.label="Done"
+    fetch_button.disabled=False
+    ingest_button.disabled=False
 
 ingest_button.on_click(ingest_data)
 
