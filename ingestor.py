@@ -13,6 +13,7 @@ from fuzzywuzzy import process as fuzzymatch
 import shutil
 import csv
 from sqlalchemy import create_engine, exc
+import sqlalchemy.types as sqltype
 
 # Set up data
 database_url='34.204.163.12:5432'
@@ -75,7 +76,12 @@ def download_data():
     url=url_input.value
     filename=url.split('/')[-1]
     progress_bar.text='Downloading {}: 0%'.format(filename)
-    resp = requests.get(url, stream=True)
+    try:
+        resp = requests.get(url, stream=True)
+    except requests.exceptions.RequestException as err:
+        progress_bar.text=str(err)
+        fetch_button.disabled=False
+        return 1
     if resp.status_code == 200:
         tempdir=tempfile.mkdtemp(dir='./')
         with open(os.path.join(tempdir,filename), "wb") as f:
@@ -132,6 +138,7 @@ def download_data():
         return 0
 
     progress_bar.text='Failed to download {}'.format(filename)
+    fetch_button.disabled=False
     return 1
 
 fetch_button.on_click(download_data)
@@ -180,7 +187,32 @@ def ingest_data():
     # else:
     #     with open(database_url,'w') as outfile:
     #         df2.to_csv(outfile, sep='\t', header=True, index=False)
-    df2.to_sql("contest_precinct", database, if_exists='append', index=False)
+    df2.to_sql("contest_precinct", database, if_exists='append', index=False, dtype={'absentee_by_mail': sqltype.Integer,
+     'candidate': sqltype.Text,
+     'contest_group_id': sqltype.Text,
+     'contest_name': sqltype.Text,
+     'contest_type': sqltype.Text,
+     'county': sqltype.Text,
+     'district': sqltype.Text,
+     'election_date': sqltype.Date,
+     'election_day': sqltype.Integer,
+     'first_name': sqltype.Text,
+     'has_primary': sqltype.Boolean,
+     'is_partisan': sqltype.Boolean,
+     'is_unexpired': sqltype.Boolean,
+     'last_name': sqltype.Text,
+     'middle_name': sqltype.Text,
+     'name_suffix_lbl': sqltype.Text,
+     'nick_name': sqltype.Text,
+     'one_stop': sqltype.Integer,
+     'party_candidate': sqltype.Text,
+     'party_contest': sqltype.Text,
+     'precinct': sqltype.Text,
+     'provisional': sqltype.Integer,
+     'term': sqltype.Text,
+     'total_votes': sqltype.Integer,
+     'vote_for': sqltype.Integer,
+     'winner_flag': sqltype.Integer})
 
     df=None
     ingest_button.label="Done"
