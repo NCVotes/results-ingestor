@@ -118,7 +118,9 @@ def download_data():
 
         widgets.children.append(row(Paragraph(text='''Columns that possibly match
         the grand schema are suggested below. Make changes as necessary. Leave the box empty
-        if no column in the data file matches that field.''', width=900)))
+        if no column in the data file matches that field. If the input in a box is not any column in the data file,
+        it will be used as a value to be assigned to all records for that field. For example,
+        election_date = 11/06/2012 will assgin 11/06/2012 to the election_date column for all contests.''', width=900)))
         del cols[:]
         for i in schema.columns:
             match=fuzzymatch.extractOne(i,df.columns)
@@ -212,7 +214,8 @@ def ingest_data():
      'term': sqltype.Text,
      'total_votes': sqltype.Integer,
      'vote_for': sqltype.Integer,
-     'winner_flag': sqltype.Integer})
+     'winner_flag': sqltype.Integer,
+     'candidacy_date': sqltype.Date})
 
     df=None
     ingest_button.label="Done"
