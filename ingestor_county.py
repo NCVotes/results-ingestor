@@ -17,7 +17,7 @@ import sqlalchemy.types as sqltype
 
 # Set up data
 database_url='34.204.163.12:5432'
-schema=pd.read_csv('schema.csv')
+schema=pd.read_csv('schema_county.csv')
 tempdir=""
 
 global df, database
@@ -54,7 +54,7 @@ def login():
     database=create_engine('postgresql://{}:{}@{}/ncvoter_prod'.format(username_input.value,password_input.value,database_url))
     try:
         database.connect()
-        par_text.text='''Fill in the url of a contest result file and it will be downloaded
+        par_text.text='''Fill in the url of a COUNTY result file and it will be downloaded
         and unzipped if the filename ends with .zip. The data file will be read (only
         csv and tsv files supported) and displayed below with its first 5 rows for preview. Its columns
         will be compared to columns in the schema and possible matches are suggested. Make changes
@@ -189,7 +189,7 @@ def ingest_data():
     # else:
     #     with open(database_url,'w') as outfile:
     #         df2.to_csv(outfile, sep='\t', header=True, index=False)
-    df2.to_sql("contest_precinct", database, if_exists='append', index=False, dtype={'absentee_by_mail': sqltype.Integer,
+    df2.to_sql("contest_county", database, if_exists='append', index=False, dtype={'absentee_by_mail': sqltype.Integer,
      'candidate': sqltype.Text,
      'contest_group_id': sqltype.Text,
      'contest_name': sqltype.Text,
@@ -209,7 +209,6 @@ def ingest_data():
      'one_stop': sqltype.Integer,
      'party_candidate': sqltype.Text,
      'party_contest': sqltype.Text,
-     'precinct': sqltype.Text,
      'provisional': sqltype.Integer,
      'term': sqltype.Text,
      'total_votes': sqltype.Integer,
