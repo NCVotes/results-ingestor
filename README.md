@@ -52,4 +52,45 @@ Candidate related attributes
 ### County Results
 Table: contest_county
 
-Columns: same as contest_precint without precinct
+Columns: same as contest_precinct without precinct
+
+It is aggreated from precinct results by the following code
+
+
+
+The county-level result table is aggregated from the precinct result table with the following code
+```
+CREATE TABLE contest_county
+AS
+SELECT election_date, 
+	contest_group_id, 
+    contest_name, 
+    string_agg(distinct contest_type,'|') as contest_type, 
+    string_agg(distinct party_contest,'|') as party_contest, 
+    district, 
+    county, 
+    max(vote_for) as vote_for, 
+    candidate, 
+    string_agg(distinct first_name,'|') as first_name, 
+    string_agg(distinct middle_name,'|') as middle_name, 
+    string_agg(distinct last_name,'|') as last_name, 
+    string_agg(distinct name_suffix_lbl,'|') as name_suffix_lbl, 
+    string_agg(distinct nick_name,'|') as nick_name, 
+    max(candidacy_date) as candidacy_date, 
+    string_agg(distinct party_candidate,'|') as party_candidate, 
+    bool_or(is_unexpired) as is_unexpired, 
+    bool_or(has_primary) as has_primary, 
+    bool_or(is_partisan) as is_partisan, 
+    string_agg(distinct term,'|') as term, 
+    sum(absentee_by_mail) as absentee_by_mail, 
+    sum(one_stop) as one_stop, 
+    sum(provisional) as provisional, 
+    sum(election_day) as election_day, 
+    sum(total_votes) as total_votes
+FROM contest_precinct
+GROUP BY election_date, contest_group_id, contest_name, district, county, candidate;
+```
+
+
+
+
