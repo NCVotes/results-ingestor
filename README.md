@@ -10,8 +10,10 @@ and ingest it into the database. It is now running at http://152.2.32.233:5006/i
 ## Database Structure
 
 ### Precinct Results
-table: contest_precinct
-columns:
+Table: contest_precinct
+
+Columns:
+
 Contest related attributes
 * election_date
 * contest_group_id: an identifier to link a contest across multiple counties
@@ -48,5 +50,6 @@ Candidate related attributes
 * winner_flag: whether winner of the contest
 
 ### County Results
-table: contest_county
-columns: same as contest_precint without precinct
+Table: contest_county
+
+Columns: same as contest_precint without precinct
