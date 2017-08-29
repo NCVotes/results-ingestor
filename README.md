@@ -86,7 +86,8 @@ SELECT election_date,
     sum(one_stop) as one_stop, 
     sum(provisional) as provisional, 
     sum(election_day) as election_day, 
-    sum(total_votes) as total_votes
+    sum(total_votes) as total_votes,
+    sum(winner_flag) as winner_flag
 FROM contest_precinct
 GROUP BY election_date, contest_group_id, contest_name, district, county, candidate;
 ```
