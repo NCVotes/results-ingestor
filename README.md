@@ -5,7 +5,7 @@
 and ingest it into the database. It is now running at http://152.2.32.233:5006/ingestor_precinct.
 
 `ingestor_county.py` is a simple web app that downloads a county result file or a county contest file
-and ingest it into the database. It is now running at http://152.2.32.233:5006/ingestor_precinct.
+and ingest it into the database. It is now running at http://152.2.32.233:5006/ingestor_county.
 
 ## Database Structure
 
