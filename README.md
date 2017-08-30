@@ -33,7 +33,7 @@ County related attributes
 * county
 
 Precinct related attributes
-* precinct
+* precinct: note that this column has vote type in it, such as ABSENTEE, ONE STOP 100, PROVISIONAL. 
 
 Candidate related attributes
 * candidate
