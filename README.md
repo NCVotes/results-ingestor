@@ -7,7 +7,7 @@ and ingest it into the database. It is now running at http://152.2.32.233:5006/i
 `ingestor_county.py` is a simple web app that downloads a county result file or a county contest file
 and ingest it into the database. It is now running at http://152.2.32.233:5006/ingestor_county.
 
-They are written bokeh in python, and can be run as `bokeh serve ingestor_precinct.py ingestor_county.py --allow-websocket-origin=*`
+They are written by bokeh in python, and can be run as `bokeh serve ingestor_precinct.py ingestor_county.py --allow-websocket-origin=*`
 
 ## Database Structure
 
